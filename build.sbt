@@ -25,7 +25,6 @@ scalacOptions <<= scalaVersion map {
     Seq("-feature", "-language:implicitConversions", "-unchecked", "-deprecation", "-encoding", "utf8")
 }
 
-
 libraryDependencies ++= Seq(
   "net.schmizz" % "sshj" % "0.10.0",
   "org.slf4j" % "slf4j-api" % "1.7.7",
@@ -34,35 +33,31 @@ libraryDependencies ++= Seq(
   "ch.qos.logback" % "logback-classic" % "1.1.2" % "test",
   "org.specs2" %% "specs2" % "2.4.6" % "test")
 
-libraryDependencies <++= scalaVersion {
-  case x if x startsWith "2.9" =>
-    Seq("org.specs2" %% "specs2" % "[1.12.4,)" % "test")
-  case x if x startsWith "2.1" =>
-    Seq("org.specs2" %% "specs2" % "2.3.11" % "test")
-}
-
 resolvers += "Scalaz Bintray Repo" at "http://dl.bintray.com/scalaz/releases"
 
+scalariformSettings
+
+ScalariformKeys.preferences := ScalariformKeys.preferences.value
+  .setPreference(RewriteArrowSymbols, true)
+  .setPreference(AlignParameters, true)
+  .setPreference(AlignSingleLineCaseStatements, true)
+  .setPreference(DoubleIndentClassDeclaration, true)
+  .setPreference(PreserveDanglingCloseParenthesis, true)
 
 ///////////////
 // publishing
 ///////////////
 
-crossScalaVersions := Seq("2.9.3", "2.10.4", "2.11.0")
-
-scalaBinaryVersion <<= scalaVersion(sV => if (CrossVersion.isStable(sV)) CrossVersion.binaryScalaVersion(sV) else sV)
+crossScalaVersions := Seq("2.10.4", "2.11.2")
 
 publishMavenStyle := true
 
-publishTo <<= version { version =>
-  Some {
-    "spray repo" at {
-      // public uri is repo.spray.io, we use an SSH tunnel to the nexus here
-      "http://localhost:42424/content/repositories/" + {
-        if (version.trim.endsWith("SNAPSHOT")) "snapshots/" else "releases/"
-      }
-    }
-  }
+useGpg := true
+
+publishTo <<= version { v: String =>
+  val nexus = "https://oss.sonatype.org/"
+  if (v.trim.endsWith("SNAPSHOT")) Some("snapshots" at nexus + "content/repositories/snapshots")
+  else                             Some("releases" at nexus + "service/local/staging/deploy/maven2")
 }
 
 pomIncludeRepository := { _ => false }
